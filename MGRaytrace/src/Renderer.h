@@ -20,7 +20,7 @@ public:
 		return m_FinalImage;
 	};
 private:
-	uint32_t PerPixel(glm::vec2 coordinate);
+	glm::vec4 PerPixel(glm::vec2 coordinate);
 
 private:
 	std::shared_ptr<Walnut::Image> m_FinalImage;
