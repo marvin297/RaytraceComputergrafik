@@ -18,16 +18,16 @@ public:
 	{
 		{
 			Sphere sphere;
-			sphere.Position = { 1.0f, 0.0f, -5.0f };
-			sphere.Albedo = { 0.2f, 0.3f, 1.0f };
-			sphere.radius = 1.5f;
+			sphere.Position = { 0.0f, 0.0f, 0.0f };
+			sphere.Mat.Albedo = { 1.0f, 0.0f, 1.0f };
+			sphere.radius = 1.0f;
 			m_Scene.Spheres.push_back(sphere);
 		}
 		{
 			Sphere sphere;
-			sphere.Position = { 0.0f, 0.0f, 0.0f };
-			sphere.Albedo = { 1.0f, 1.0f, 0.0f };
-			sphere.radius = 0.5f;
+			sphere.Position = { 0.0f, -101.0f, -0.0f };
+			sphere.Mat.Albedo = { 0.2f, 0.3f, 1.0f };
+			sphere.radius = 100.0f;
 			m_Scene.Spheres.push_back(sphere);
 		}
 		
@@ -57,7 +57,9 @@ public:
 			Sphere& sphere = m_Scene.Spheres[i];
 			ImGui::DragFloat3("Pos", glm::value_ptr(sphere.Position), 0.1f);
 			ImGui::DragFloat("Rad", &sphere.radius, 0.1f);
-			ImGui::ColorEdit3("Albedo", glm::value_ptr(sphere.Albedo));
+			ImGui::ColorEdit3("Albedo", glm::value_ptr(sphere.Mat.Albedo));
+			ImGui::DragFloat("Roughness", &sphere.Mat.roughness, 0.1f);
+			ImGui::DragFloat("Metallic", &sphere.Mat.metallic, 0.1f);
 			ImGui::Separator();
 
 			ImGui::PopID();

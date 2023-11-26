@@ -2,6 +2,8 @@
 
 #include "Walnut/Random.h"
 
+#include <iostream>
+
 namespace Utils {
 	static uint32_t ConvertToRGBA(const glm::vec4& color)
 	{
@@ -22,8 +24,6 @@ void Renderer::Render(const Scene& scene, const Camera& camera)
 	m_ActiveScene = &scene;
 	m_ActiveCamera = &camera;
 	
-	
-
 	// this renders every pixel we have
 	for (uint32_t y = 0; y < m_FinalImage->GetHeight(); y++)
 	{
@@ -53,26 +53,27 @@ glm::vec4 Renderer::PerPixel(uint32_t x, uint32_t y)
 	ray.Origin = m_ActiveCamera->GetPosition();
 	ray.Direction = m_ActiveCamera->GetRayDirections()[x + y * m_FinalImage->GetWidth()];
 
-	glm::vec3 color(0.0f);
+	glm::vec3 color(0.0f, 0.0f, 0.0f);
 	float multiplier = 1.0f;
 
-	uint32_t bounceCount = 2;
-	for (uint32_t i = 0; i < bounceCount; ++i)
+	int bounceCount = 2;
+	for (int i = 0; i < bounceCount; i++)
 	{
 		Renderer::HitPayload payload = TraceRay(ray);
+
 		if (payload.hitDist < 0.0f)
 		{
-			glm::vec3 skyColor = glm::vec3(0.0f, 0.0f, 0.0f);
+			glm::vec3 skyColor = glm::vec3(0.6f, 0.7f, 0.9f);
 			color += skyColor * multiplier;
+
 			break;
 		}
-
 		glm::vec3 lightDir = glm::normalize(glm::vec3(-1, -1, -1));
 		float lightInt = glm::max(glm::dot(payload.WorldNorm, -lightDir), 0.0f); // dot product = cos(angle) but only positive values
 
 		const Sphere& sphere = m_ActiveScene->Spheres[payload.objectIndex];
 
-		glm::vec3 sphereCol = sphere.Albedo;
+		glm::vec3 sphereCol = sphere.Mat.Albedo;
 		sphereCol *= lightInt;
 		color += sphereCol * multiplier;
 
@@ -88,8 +89,12 @@ glm::vec4 Renderer::PerPixel(uint32_t x, uint32_t y)
 		// calc the reflected ray direction.
 		// the incoming angle from the ray to the Normal is equal to the outgoing angle
 		// this is a simple optical law in physics
-		ray.Direction = glm::reflect(ray.Direction, payload.WorldNorm);
+		// however tis is VERY idealized assuming a perfectly flat surface (which physically cannot exist):
+		//ray.Direction = glm::reflect(ray.Direction, payload.WorldNorm);
 
+		//this is a more realistic approach:
+		ray.Direction = glm::reflect(ray.Direction, 
+			payload.WorldNorm + sphere.Mat.roughness * Walnut::Random::Vec3(-0.5f, 0.5));
 
 	}
 
@@ -139,7 +144,7 @@ Renderer::HitPayload Renderer::TraceRay(const Ray& ray)
 	}
 	
 	if (closestSphere < 0)
-		Missed(ray);
+		return Missed(ray);
 
 	return NearestHit(ray, hitDist, closestSphere);
 	
