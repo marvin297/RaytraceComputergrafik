@@ -60,43 +60,54 @@ glm::vec4 Renderer::TraceRay(const Scene& scene, const Ray& ray)
 	// (bx^2 + by^2)t^2 + (2(axbx + ayby))t + (ax^2 + ay^2 - r^2) = 0
 	// a is the origin / pixel; b is the direction; r is sphere radius; t is intersection distance
 	
-	if(scene.Spheres.size() == 0) // if there is nothing to render at all
+	if (scene.Spheres.size() == 0) // if there is nothing to render at all
 	{
 		return glm::vec4(0, 0, 0, 1); // black
 	}
-
-	const Sphere& sphere = scene.Spheres[0]; // take first sphere
-
-	glm::vec3 origin = ray.Origin - sphere.Position;
-
-	//float a = rayDir.x * rayDir.x + rayDir.y * rayDir.y + rayDir.z * rayDir.z; // this equals the dot product with itself
-	float a = glm::dot(ray.Direction, ray.Direction);
-	float b = 2.0f * glm::dot(origin, ray.Direction);
-	float c = glm::dot(origin, origin) - sphere.radius * sphere.radius;
-
-
-
-	// calculate the discriminant of the PQ-formula: b^2 - 4ac
-	float discr = b * b - 4.0f * a * c;
-
-	if (discr < 0.0f) // ray didnt hit anything
+	const Sphere* closestSphere = nullptr;
+	float hitDist = std::numeric_limits<float>::max(); // set hit distance to infinity
+	for (const Sphere& sphere : scene.Spheres)
 	{
-		return glm::vec4(0, 0, 0, 1); // black
+		glm::vec3 origin = ray.Origin - sphere.Position;
+
+		//float a = rayDir.x * rayDir.x + rayDir.y * rayDir.y + rayDir.z * rayDir.z; // this equals the dot product with itself
+		float a = glm::dot(ray.Direction, ray.Direction);
+		float b = 2.0f * glm::dot(origin, ray.Direction);
+		float c = glm::dot(origin, origin) - sphere.radius * sphere.radius;
+
+		// calculate the discriminant of the PQ-formula: b^2 - 4ac
+		float discr = b * b - 4.0f * a * c;
+
+		if (discr < 0.0f) // ray didnt hit anything
+		{
+			continue;
+		}
+
+		// now use the PQ-formula to get points of intersection (-b (+-) sqrt(discr)) / 2a
+		//float tPlus = (-b + glm::sqrt(discr)) / (2.0f * a); // (unused) as a > 0 this is always bigger than calc above
+		float tClosest = (-b - glm::sqrt(discr)) / (2.0f * a);
+		if (tClosest < hitDist)
+		{
+			hitDist = tClosest;
+			closestSphere = &sphere;
+		}
+
 	}
+	
+	if (closestSphere == nullptr)
+		return glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
 
-	// now use the PQ-formula to get points of intersection (-b (+-) sqrt(discr)) / 2a
-	float tPlus = (-b + glm::sqrt(discr)) / (2.0f * a); // as a > 0 this is always bigger than calc below
-	float tClosest = (-b - glm::sqrt(discr)) / (2.0f * a);
-
+	glm::vec3 origin = ray.Origin - closestSphere->Position;
+	//const Sphere& sphere = scene.Spheres[0]; // (debugging) take first sphere
 	//glm::vec3 hitPosition0 = rayOrigin + rayDir * tPlus; // not needed
-	glm::vec3 hitPosition = origin + ray.Direction * tClosest;
+	glm::vec3 hitPosition = origin + ray.Direction * hitDist;
 	glm::vec3 normal = glm::normalize(hitPosition);
 
 	glm::vec3 lightDir = glm::normalize(glm::vec3(-1, -1, -1));
 
 	float lightInt = glm::max(glm::dot(normal, -lightDir), 0.0f); // dot product = cos(angle) but only positive values
 
-	glm::vec3 sphereCol = sphere.Albedo;
+	glm::vec3 sphereCol = closestSphere->Albedo;
 	sphereCol *= lightInt;
 
 	return glm::vec4(sphereCol, 1.0f);

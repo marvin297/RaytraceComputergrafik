@@ -16,10 +16,21 @@ public:
 	ExampleLayer()
 		: m_Camera(45.0f, 0.1f, 100.0f)
 	{
-		Sphere sphere;
-		sphere.Position = { 0.0f, 0.0f, 0.0f };
-		sphere.Albedo = { 1.0f, 1.0f, 0.0f };
-		m_Scene.Spheres.push_back(sphere);
+		{
+			Sphere sphere;
+			sphere.Position = { 1.0f, 0.0f, -5.0f };
+			sphere.Albedo = { 0.2f, 0.3f, 1.0f };
+			sphere.radius = 1.5f;
+			m_Scene.Spheres.push_back(sphere);
+		}
+		{
+			Sphere sphere;
+			sphere.Position = { 0.0f, 0.0f, 0.0f };
+			sphere.Albedo = { 1.0f, 1.0f, 0.0f };
+			sphere.radius = 0.5f;
+			m_Scene.Spheres.push_back(sphere);
+		}
+		
 	}
 
 
