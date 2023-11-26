@@ -5,12 +5,22 @@
 #include "Walnut/Timer.h"
 
 #include "Renderer.h"
+#include "Camera.h"
 
 using namespace Walnut;
 
 class ExampleLayer : public Walnut::Layer
 {
 public:
+	ExampleLayer()
+		: m_Camera(45.0f, 0.1f, 100.0f) {}
+
+
+	virtual void OnUpdate(float ts) override // ts is a timestep of the time passed from the last call of the func
+	{
+		m_Camera.OnUpdate(ts);
+	}
+
 	virtual void OnUIRender() override //this func gets called every frame
 	{
 		ImGui::Begin("Settings");
@@ -49,7 +59,8 @@ public:
 		Timer timer; // monitor frametimes with timer object
 
 		m_Renderer.onResize(m_ViewportWidth, m_ViewportHeight);
-		m_Renderer.Render();
+		m_Camera.OnResize(m_ViewportWidth, m_ViewportHeight);
+		m_Renderer.Render(m_Camera);
 
 		m_LastRenderTime = timer.ElapsedMillis();
 
@@ -57,6 +68,7 @@ public:
 
 private: 
 	Renderer m_Renderer;
+	Camera m_Camera; // create a camera object from the external camera class
 	uint32_t* m_ImageData = nullptr;
 
 	uint32_t m_ViewportWidth = 0;
