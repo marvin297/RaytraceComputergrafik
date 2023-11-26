@@ -46,7 +46,7 @@ glm::vec4 Renderer::PerPixel(glm::vec2 coordinate)
 	uint8_t g = (uint8_t)(coordinate.y * 255.0f);
 	//return Walnut::Random::UInt() | 0xff000000; // test
 
-	glm::vec3 rayOrigin(0.0f, 0.0f, 2.0f);
+	glm::vec3 rayOrigin(0.0f, 0.0f, 1.0f);
 	glm::vec3 rayDir(coordinate.x, coordinate.y, -1); // shoot the ray from the camera to the objects in z direction
 	float radius = 0.5f;
 	//rayDir = glm::normalize(rayDir);
@@ -78,9 +78,14 @@ glm::vec4 Renderer::PerPixel(glm::vec2 coordinate)
 
 	//glm::vec3 hitPosition0 = rayOrigin + rayDir * tPlus; // not needed
 	glm::vec3 hitPosition = rayOrigin + rayDir * tClosest;
+	glm::vec3 normal = glm::normalize(hitPosition);
 
-	glm::vec3 sphereCol(1, 0, 1);
-	sphereCol = hitPosition;
+	glm::vec3 lightDir = glm::normalize(glm::vec3(1, -1, -1));
+
+	float dotProduct = glm::max(glm::dot(normal, -lightDir), 0.0f); // dot product = cos(angle) but only positive values
+
+	glm::vec3 sphereCol(1, 1, 0);
+	sphereCol *= dotProduct;
 
 	return glm::vec4(sphereCol, 1.0f);
 }
