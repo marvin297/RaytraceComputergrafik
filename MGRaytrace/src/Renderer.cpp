@@ -17,7 +17,7 @@ namespace Utils {
 	}
 }
 
-void Renderer::Render(const Camera& camera)
+void Renderer::Render(const Scene& scene, const Camera& camera)
 {
 	Ray ray;
 	//const glm::vec3& rayOrigin = camera.GetPosition();
@@ -33,7 +33,7 @@ void Renderer::Render(const Camera& camera)
 			//const glm::vec3& rayDir = camera.GetRayDirections()[x + y * m_FinalImage->GetWidth() ];
 
 			ray.Direction = camera.GetRayDirections()[x + y * m_FinalImage->GetWidth()];
-			glm::vec4 color = TraceRay(ray);
+			glm::vec4 color = TraceRay(scene, ray);
 			color = glm::clamp(color, glm::vec4(0.0f), glm::vec4(1.0f)); // ensure that each rgba channel is between 0 and 1
 
 			m_ImageData[ x + y * m_FinalImage->GetWidth() ] = Utils::ConvertToRGBA(color); // calculate the correct adress each pixel is stored in
@@ -45,7 +45,7 @@ void Renderer::Render(const Camera& camera)
 	m_FinalImage->SetData(m_ImageData);
 }
 
-glm::vec4 Renderer::TraceRay(const Ray& ray)
+glm::vec4 Renderer::TraceRay(const Scene& scene, const Ray& ray)
 {
 	//uint8_t r = (uint8_t)(coordinate.x * 255.0f);
 	//uint8_t g = (uint8_t)(coordinate.y * 255.0f);
@@ -53,7 +53,6 @@ glm::vec4 Renderer::TraceRay(const Ray& ray)
 
 	//glm::vec3 rayOrigin(0.0f, 0.0f, 1.0f);
 	//glm::vec3 rayDir(coordinate.x, coordinate.y, -1); // shoot the ray from the camera to the objects in z direction
-	float radius = 0.5f;
 
 	// the following equation defines the points of an intersection between a ray and a circle
 	// (bx^2 + by^2)t^2 + (2axbx + 2ayby)t + (ax^2 + ay^2 - r^2) = 0
@@ -61,10 +60,19 @@ glm::vec4 Renderer::TraceRay(const Ray& ray)
 	// (bx^2 + by^2)t^2 + (2(axbx + ayby))t + (ax^2 + ay^2 - r^2) = 0
 	// a is the origin / pixel; b is the direction; r is sphere radius; t is intersection distance
 	
+	if(scene.Spheres.size() == 0) // if there is nothing to render at all
+	{
+		return glm::vec4(0, 0, 0, 1); // black
+	}
+
+	const Sphere& sphere = scene.Spheres[0]; // take first sphere
+
+	glm::vec3 origin = ray.Origin - sphere.Position;
+
 	//float a = rayDir.x * rayDir.x + rayDir.y * rayDir.y + rayDir.z * rayDir.z; // this equals the dot product with itself
 	float a = glm::dot(ray.Direction, ray.Direction);
-	float b = 2.0f * glm::dot(ray.Origin, ray.Direction);
-	float c = glm::dot(ray.Origin, ray.Origin) - radius * radius;
+	float b = 2.0f * glm::dot(origin, ray.Direction);
+	float c = glm::dot(origin, origin) - sphere.radius * sphere.radius;
 
 
 
@@ -81,15 +89,15 @@ glm::vec4 Renderer::TraceRay(const Ray& ray)
 	float tClosest = (-b - glm::sqrt(discr)) / (2.0f * a);
 
 	//glm::vec3 hitPosition0 = rayOrigin + rayDir * tPlus; // not needed
-	glm::vec3 hitPosition = ray.Origin + ray.Direction * tClosest;
+	glm::vec3 hitPosition = origin + ray.Direction * tClosest;
 	glm::vec3 normal = glm::normalize(hitPosition);
 
 	glm::vec3 lightDir = glm::normalize(glm::vec3(-1, -1, -1));
 
-	float dotProduct = glm::max(glm::dot(normal, -lightDir), 0.0f); // dot product = cos(angle) but only positive values
+	float lightInt = glm::max(glm::dot(normal, -lightDir), 0.0f); // dot product = cos(angle) but only positive values
 
-	glm::vec3 sphereCol(1, 0, 1);
-	sphereCol *= dotProduct;
+	glm::vec3 sphereCol = sphere.Albedo;
+	sphereCol *= lightInt;
 
 	return glm::vec4(sphereCol, 1.0f);
 }

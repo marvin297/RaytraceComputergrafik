@@ -13,7 +13,10 @@ class ExampleLayer : public Walnut::Layer
 {
 public:
 	ExampleLayer()
-		: m_Camera(45.0f, 0.1f, 100.0f) {}
+		: m_Camera(45.0f, 0.1f, 100.0f)
+	{
+		m_Scene.Spheres.push_back(Sphere{ {0.0f, 0.0f, 0.0f} , 0.5f, {1.0f, 1.0f, 0.0f} });
+	}
 
 
 	virtual void OnUpdate(float ts) override // ts is a timestep of the time passed from the last call of the func
@@ -60,7 +63,7 @@ public:
 
 		m_Renderer.onResize(m_ViewportWidth, m_ViewportHeight);
 		m_Camera.OnResize(m_ViewportWidth, m_ViewportHeight);
-		m_Renderer.Render(m_Camera);
+		m_Renderer.Render(m_Scene, m_Camera);
 
 		m_LastRenderTime = timer.ElapsedMillis();
 
@@ -69,6 +72,8 @@ public:
 private: 
 	Renderer m_Renderer;
 	Camera m_Camera; // create a camera object from the external camera class
+	Scene m_Scene;
+
 	uint32_t* m_ImageData = nullptr;
 
 	uint32_t m_ViewportWidth = 0;
