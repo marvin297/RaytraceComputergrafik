@@ -2,8 +2,9 @@
 #include "Walnut/EntryPoint.h"
 
 #include "Walnut/Image.h"
-#include "Walnut/Random.h"
 #include "Walnut/Timer.h"
+
+#include "Renderer.h"
 
 using namespace Walnut;
 
@@ -27,9 +28,14 @@ public:
 		m_ViewportWidth = ImGui::GetContentRegionAvail().x;
 		m_ViewportHeight = ImGui::GetContentRegionAvail().y;
 
-		if (m_Image) {
+		auto image = m_Renderer.GetFinalImage();
+		if (image) {
 			//check if there is even a image, otherwise it will crash as it tries to render at nullptr
-			ImGui::Image(m_Image->GetDescriptorSet(), { (float)m_Image->GetWidth(), (float)m_Image->GetHeight() });
+			ImGui::Image
+			(
+				//the last two ImVec2's just reverse the way the image is being displayed
+				image->GetDescriptorSet(), { (float)image->GetWidth(), (float)image->GetHeight() }, ImVec2(0, 1), ImVec2(1, 0)
+			);
 		}
 
 		ImGui::End();
@@ -42,28 +48,15 @@ public:
 	{
 		Timer timer; // monitor frametimes with timer object
 
-		if (!m_Image || m_ViewportWidth != m_Image->GetWidth() || m_ViewportHeight != m_Image->GetHeight())
-		{
-			m_Image = std::make_shared<Image>(m_ViewportWidth, m_ViewportHeight, ImageFormat::RGBA);
-			delete[] m_ImageData;
-			m_ImageData = new uint32_t[m_ViewportHeight * m_ViewportWidth]; // the rgba format uses 1 byte per channel so 1px = 1 uint32_T
-		}
-
-		for (uint32_t i = 0; i < m_ViewportHeight * m_ViewportWidth; ++i)
-		{
-			//m_ImageData[i] = 0xff00ffff; // ff=alpha, 00=blue, ff=green, ff=red
-			m_ImageData[i] = Random::UInt();
-			m_ImageData[i] |= 0xff000000; // ensure the alpha channel is alwas at 255
-		}
-
-		m_Image->SetData(m_ImageData);
+		m_Renderer.onResize(m_ViewportWidth, m_ViewportHeight);
+		m_Renderer.Render();
 
 		m_LastRenderTime = timer.ElapsedMillis();
 
 	}
 
 private: 
-	std::shared_ptr<Image> m_Image;
+	Renderer m_Renderer;
 	uint32_t* m_ImageData = nullptr;
 
 	uint32_t m_ViewportWidth = 0;
