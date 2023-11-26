@@ -23,9 +23,26 @@ public:
 		return m_FinalImage;
 	};
 private:
-	glm::vec4 TraceRay(const Scene& scene, const Ray& ray);
+	struct HitPayload
+	{
+		float hitDist;
+		int objectIndex;
+		glm::vec3 WorldNorm;
+		glm::vec3 WorldPos;
+	};
+
+	// this is going to implement a raygen shader similar to vulkan
+	glm::vec4 PerPixel(uint32_t x, uint32_t y);
+
+	HitPayload NearestHit(const Ray& ray, float hitDist, int objectIndex);
+	HitPayload Missed(const Ray& ray);
+	HitPayload TraceRay(const Ray& ray);
 
 private:
 	std::shared_ptr<Walnut::Image> m_FinalImage;
+
+	const Scene* m_ActiveScene = nullptr;
+	const Camera* m_ActiveCamera = nullptr;
+
 	uint32_t* m_ImageData = nullptr;
 };

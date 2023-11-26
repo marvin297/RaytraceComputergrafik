@@ -19,21 +19,23 @@ namespace Utils {
 
 void Renderer::Render(const Scene& scene, const Camera& camera)
 {
-	Ray ray;
-	//const glm::vec3& rayOrigin = camera.GetPosition();
-	ray.Origin = camera.GetPosition();
+	m_ActiveScene = &scene;
+	m_ActiveCamera = &camera;
+	
+	
 
 	// this renders every pixel we have
 	for (uint32_t y = 0; y < m_FinalImage->GetHeight(); y++)
 	{
 		for (uint32_t x = 0; x < m_FinalImage->GetWidth(); x++)
 		{
+			//PerPixel(x, y);
+			
 			//glm::vec2 coordinate = { (float)x / (float)m_FinalImage->GetWidth(), (float)y / (float)m_FinalImage->GetHeight() };
 			//coordinate = coordinate * 2.0f - 1.0f; //coordinate range is now from -1 to 1
 			//const glm::vec3& rayDir = camera.GetRayDirections()[x + y * m_FinalImage->GetWidth() ];
 
-			ray.Direction = camera.GetRayDirections()[x + y * m_FinalImage->GetWidth()];
-			glm::vec4 color = TraceRay(scene, ray);
+			glm::vec4 color = PerPixel(x, y);
 			color = glm::clamp(color, glm::vec4(0.0f), glm::vec4(1.0f)); // ensure that each rgba channel is between 0 and 1
 
 			m_ImageData[ x + y * m_FinalImage->GetWidth() ] = Utils::ConvertToRGBA(color); // calculate the correct adress each pixel is stored in
@@ -45,29 +47,71 @@ void Renderer::Render(const Scene& scene, const Camera& camera)
 	m_FinalImage->SetData(m_ImageData);
 }
 
-glm::vec4 Renderer::TraceRay(const Scene& scene, const Ray& ray)
+glm::vec4 Renderer::PerPixel(uint32_t x, uint32_t y)
 {
-	//uint8_t r = (uint8_t)(coordinate.x * 255.0f);
-	//uint8_t g = (uint8_t)(coordinate.y * 255.0f);
-	//return Walnut::Random::UInt() | 0xff000000; // test
+	Ray ray;
+	ray.Origin = m_ActiveCamera->GetPosition();
+	ray.Direction = m_ActiveCamera->GetRayDirections()[x + y * m_FinalImage->GetWidth()];
 
-	//glm::vec3 rayOrigin(0.0f, 0.0f, 1.0f);
-	//glm::vec3 rayDir(coordinate.x, coordinate.y, -1); // shoot the ray from the camera to the objects in z direction
+	glm::vec3 color(0.0f);
+	float multiplier = 1.0f;
 
+	uint32_t bounceCount = 2;
+	for (uint32_t i = 0; i < bounceCount; ++i)
+	{
+		Renderer::HitPayload payload = TraceRay(ray);
+		if (payload.hitDist < 0.0f)
+		{
+			glm::vec3 skyColor = glm::vec3(0.0f, 0.0f, 0.0f);
+			color += skyColor * multiplier;
+			break;
+		}
+
+		glm::vec3 lightDir = glm::normalize(glm::vec3(-1, -1, -1));
+		float lightInt = glm::max(glm::dot(payload.WorldNorm, -lightDir), 0.0f); // dot product = cos(angle) but only positive values
+
+		const Sphere& sphere = m_ActiveScene->Spheres[payload.objectIndex];
+
+		glm::vec3 sphereCol = sphere.Albedo;
+		sphereCol *= lightInt;
+		color += sphereCol * multiplier;
+
+		multiplier *= 0.7f;
+
+		// set the ray origin to the hit position (which is worldposition)
+		// it is also required to move a minuscule amount aoutwards due to 
+		// some uncertainty within floating point numbers
+		// there could be a colision with the sphere itseolf directly at the start/origin
+		// so adding a tini amount in the Normal's direction fixes this
+		ray.Origin = payload.WorldPos + payload.WorldNorm * 0.0001f;
+
+		// calc the reflected ray direction.
+		// the incoming angle from the ray to the Normal is equal to the outgoing angle
+		// this is a simple optical law in physics
+		ray.Direction = glm::reflect(ray.Direction, payload.WorldNorm);
+
+
+	}
+
+
+	return glm::vec4(color, 1.0f);
+}
+
+Renderer::HitPayload Renderer::TraceRay(const Ray& ray)
+{
 	// the following equation defines the points of an intersection between a ray and a circle
 	// (bx^2 + by^2)t^2 + (2axbx + 2ayby)t + (ax^2 + ay^2 - r^2) = 0
 	// simplify by factoring 2 out
 	// (bx^2 + by^2)t^2 + (2(axbx + ayby))t + (ax^2 + ay^2 - r^2) = 0
 	// a is the origin / pixel; b is the direction; r is sphere radius; t is intersection distance
 	
-	if (scene.Spheres.size() == 0) // if there is nothing to render at all
-	{
-		return glm::vec4(0, 0, 0, 1); // black
-	}
-	const Sphere* closestSphere = nullptr;
+	int closestSphere = -1;
 	float hitDist = std::numeric_limits<float>::max(); // set hit distance to infinity
-	for (const Sphere& sphere : scene.Spheres)
+
+	for (size_t i = 0; i < m_ActiveScene->Spheres.size(); ++i)
 	{
+		const Sphere& sphere = m_ActiveScene->Spheres[i];
+
 		glm::vec3 origin = ray.Origin - sphere.Position;
 
 		//float a = rayDir.x * rayDir.x + rayDir.y * rayDir.y + rayDir.z * rayDir.z; // this equals the dot product with itself
@@ -86,31 +130,42 @@ glm::vec4 Renderer::TraceRay(const Scene& scene, const Ray& ray)
 		// now use the PQ-formula to get points of intersection (-b (+-) sqrt(discr)) / 2a
 		//float tPlus = (-b + glm::sqrt(discr)) / (2.0f * a); // (unused) as a > 0 this is always bigger than calc above
 		float tClosest = (-b - glm::sqrt(discr)) / (2.0f * a);
-		if (tClosest < hitDist)
+		if (tClosest > 0.0f && tClosest < hitDist)
 		{
 			hitDist = tClosest;
-			closestSphere = &sphere;
+			closestSphere = (int)i;
 		}
 
 	}
 	
-	if (closestSphere == nullptr)
-		return glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+	if (closestSphere < 0)
+		Missed(ray);
 
-	glm::vec3 origin = ray.Origin - closestSphere->Position;
-	//const Sphere& sphere = scene.Spheres[0]; // (debugging) take first sphere
-	//glm::vec3 hitPosition0 = rayOrigin + rayDir * tPlus; // not needed
-	glm::vec3 hitPosition = origin + ray.Direction * hitDist;
-	glm::vec3 normal = glm::normalize(hitPosition);
+	return NearestHit(ray, hitDist, closestSphere);
+	
+}
 
-	glm::vec3 lightDir = glm::normalize(glm::vec3(-1, -1, -1));
+Renderer::HitPayload Renderer::NearestHit(const Ray& ray, float hitDist, int objectIndex)
+{
+	Renderer::HitPayload payload;
+	payload.hitDist = hitDist;
+	payload.objectIndex = objectIndex;
+	
+	const Sphere& closestSphere = m_ActiveScene->Spheres[objectIndex];
+	
+	glm::vec3 origin = ray.Origin - closestSphere.Position;
 
-	float lightInt = glm::max(glm::dot(normal, -lightDir), 0.0f); // dot product = cos(angle) but only positive values
+	payload.WorldPos = origin + ray.Direction * hitDist;
+	payload.WorldNorm = glm::normalize(payload.WorldPos);
+	payload.WorldPos += closestSphere.Position;
+	return payload;
+}
 
-	glm::vec3 sphereCol = closestSphere->Albedo;
-	sphereCol *= lightInt;
-
-	return glm::vec4(sphereCol, 1.0f);
+Renderer::HitPayload Renderer::Missed(const Ray& ray)
+{
+	Renderer::HitPayload payload;
+	payload.hitDist = -1.0f; // never hit anything
+	return payload;
 }
 
 void Renderer::onResize(uint32_t width, uint32_t height)
