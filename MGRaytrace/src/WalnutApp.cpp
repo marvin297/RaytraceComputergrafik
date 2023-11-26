@@ -1,8 +1,9 @@
 #include "Walnut/Application.h"
 #include "Walnut/EntryPoint.h"
-
 #include "Walnut/Image.h"
 #include "Walnut/Timer.h"
+
+#include <glm/gtc/type_ptr.hpp>
 
 #include "Renderer.h"
 #include "Camera.h"
@@ -15,7 +16,10 @@ public:
 	ExampleLayer()
 		: m_Camera(45.0f, 0.1f, 100.0f)
 	{
-		m_Scene.Spheres.push_back(Sphere{ {0.0f, 0.0f, 0.0f} , 0.5f, {1.0f, 1.0f, 0.0f} });
+		Sphere sphere;
+		sphere.Position = { 0.0f, 0.0f, 0.0f };
+		sphere.Albedo = { 1.0f, 1.0f, 0.0f };
+		m_Scene.Spheres.push_back(sphere);
 	}
 
 
@@ -27,12 +31,17 @@ public:
 	virtual void OnUIRender() override //this func gets called every frame
 	{
 		ImGui::Begin("Settings");
-
 		ImGui::Text("Last render: %.2fms", m_LastRenderTime);
 		if (ImGui::Button("Render"))
 		{
 			Render();
 		}
+		ImGui::End();
+
+		ImGui::Begin("Scene");
+		ImGui::DragFloat3("Pos", glm::value_ptr(m_Scene.Spheres[0].Position), 0.1f);
+		ImGui::DragFloat("Rad", &m_Scene.Spheres[0].radius, 0.1f);
+		ImGui::ColorEdit3("Albedo", glm::value_ptr(m_Scene.Spheres[0].Albedo));
 		ImGui::End();
 
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f)); // remove bezels from viewport side
