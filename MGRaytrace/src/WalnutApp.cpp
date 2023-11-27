@@ -54,7 +54,7 @@ public:
 	virtual void OnUIRender() override //this func gets called every frame
 	{
 		ImGui::Begin("Settings");
-		ImGui::Text("Last render: %.2fms", m_LastRenderTime);
+		ImGui::Text("fps: %.2f", (float)(1000.0f / m_LastRenderTime));
 		if (ImGui::Button("Reset"))
 		{
 			m_Renderer.FrameCountReset();
