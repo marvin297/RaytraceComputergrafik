@@ -34,8 +34,8 @@ public:
 		}
 		{
 			Sphere sphere;
-			sphere.Position = { 0.0f, -101.0f, -0.0f };
-			sphere.radius = 100.0f;
+			sphere.Position = { 0.0f, -1001.0f, -0.0f };
+			sphere.radius = 1000.0f;
 			sphere.MaterialIndex = 1;
 			m_Scene.Spheres.push_back(sphere);
 		}
@@ -60,10 +60,11 @@ public:
 			m_Renderer.FrameCountReset();
 		}
 		ImGui::Checkbox("Accumulate", &m_Renderer.GetSettings().Accumulate);
-		if (ImGui::Button("Render"))
-		{
-			Render();
-		}
+		ImGui::Checkbox("Multithreading", &m_Renderer.GetSettings().Multithreading);
+		//if (ImGui::Button("Render"))
+		//{
+		//	Render();
+		//}
 		ImGui::End();
 
 		ImGui::Begin("Scene");

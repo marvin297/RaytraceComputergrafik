@@ -13,6 +13,7 @@ public:
 	struct Settings
 	{
 		bool Accumulate = true;
+		bool Multithreading = true;
 	};
 
 public:
