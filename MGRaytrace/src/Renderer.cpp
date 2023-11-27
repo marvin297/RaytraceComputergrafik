@@ -104,8 +104,8 @@ glm::vec4 Renderer::PerPixel(uint32_t x, uint32_t y)
 	ray.Origin = m_ActiveCamera->GetPosition();
 	ray.Direction = m_ActiveCamera->GetRayDirections()[x + y * m_FinalImage->GetWidth()];
 
-	glm::vec3 color(0.0f, 0.0f, 0.0f);
-	float multiplier = 1.0f;
+	glm::vec3 light(0.0f, 0.0f, 0.0f);
+	glm::vec3 throughput(1.0f);
 
 	int bounceCount = 5;
 	for (int i = 0; i < bounceCount; i++)
@@ -115,21 +115,26 @@ glm::vec4 Renderer::PerPixel(uint32_t x, uint32_t y)
 		if (payload.hitDist < 0.0f)
 		{
 			glm::vec3 skyColor = glm::vec3(0.6f, 0.7f, 0.9f);
-			color += skyColor * multiplier;
+			light += skyColor * throughput;
 
 			break;
 		}
-		glm::vec3 lightDir = glm::normalize(glm::vec3(-1, -1, -1));
-		float lightInt = glm::max(glm::dot(payload.WorldNorm, -lightDir), 0.0f); // dot product = cos(angle) but only positive values
+		
+		//glm::vec3 lightDir = glm::normalize(glm::vec3(-1, -1, -1));
+		//float lightInt = glm::max(glm::dot(payload.WorldNorm, -lightDir), 0.0f); // dot product = cos(angle) but only positive values
 
 		const Sphere& sphere = m_ActiveScene->Spheres[payload.objectIndex];
 		const Material& material = m_ActiveScene->Materials[sphere.MaterialIndex];
 
-		glm::vec3 sphereCol = material.Albedo;
-		sphereCol *= lightInt;
-		color += sphereCol * multiplier;
+		//glm::vec3 sphereCol = material.Albedo;
+		//sphereCol *= lightInt;
+		//light += material.Albedo * multiplier;
 
-		multiplier *= 0.5f;
+		//the throughput is eventially decrease or stay at one but will
+		//never ever increase. in physics: conservation of energy law!
+		throughput *= material.Albedo;
+
+		light += material.GetEmission() * material.Albedo;
 
 		// set the ray origin to the hit position (which is worldposition)
 		// it is also required to move a minuscule amount aoutwards due to 
@@ -145,13 +150,14 @@ glm::vec4 Renderer::PerPixel(uint32_t x, uint32_t y)
 		//ray.Direction = glm::reflect(ray.Direction, payload.WorldNorm);
 
 		//this is a more realistic approach:
-		ray.Direction = glm::reflect(ray.Direction, 
-			payload.WorldNorm + material.roughness * Walnut::Random::Vec3(-0.5f, 0.5));
+		//ray.Direction = glm::reflect(ray.Direction, 
+			//payload.WorldNorm + material.roughness * Walnut::Random::Vec3(-0.5f, 0.5));
 
+		ray.Direction = glm::normalize(payload.WorldNorm + Walnut::Random::InUnitSphere());
 	}
 
 
-	return glm::vec4(color, 1.0f);
+	return glm::vec4(light, 1.0f);
 }
 
 Renderer::HitPayload Renderer::TraceRay(const Ray& ray)

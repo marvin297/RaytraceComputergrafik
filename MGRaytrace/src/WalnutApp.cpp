@@ -25,11 +25,24 @@ public:
 		blueSphere.Albedo = { 0.2f, 0.3f, 1.0f };
 		blueSphere.roughness = 0.1f;
 
+		Material& sunSphere = m_Scene.Materials.emplace_back();
+		sunSphere.Albedo = { 0.8f, 0.4f, 0.2f };
+		sunSphere.roughness = 0.01f;
+		sunSphere.emissionCol = sunSphere.Albedo;
+		sunSphere.emissionPow = 2.0f;
+
 		{
 			Sphere sphere;
 			sphere.Position = { 0.0f, 0.0f, 0.0f };
 			sphere.radius = 1.0f;
 			sphere.MaterialIndex = 0; // apply the first material
+			m_Scene.Spheres.push_back(sphere);
+		}
+		{
+			Sphere sphere;
+			sphere.Position = { 2.0f, 0.0f, 0.0f };
+			sphere.radius = 1.0f;
+			sphere.MaterialIndex = 2; // apply the first material
 			m_Scene.Spheres.push_back(sphere);
 		}
 		{
@@ -91,6 +104,8 @@ public:
 			ImGui::ColorEdit3("Albedo", glm::value_ptr(material.Albedo));
 			ImGui::DragFloat("Roughness", &material.roughness, 0.05f, 0.0f, 1.0f);
 			ImGui::DragFloat("Metallic", &material.metallic, 0.05f, 0.0f, 1.0f);
+			ImGui::ColorEdit3("Emission col", glm::value_ptr(material.emissionCol));
+			ImGui::DragFloat("Emission pow", &material.emissionPow, 0.05f, 0.0f, std::numeric_limits<float>::max());
 
 			ImGui::Separator();
 
