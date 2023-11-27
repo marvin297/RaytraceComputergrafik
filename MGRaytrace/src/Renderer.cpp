@@ -2,7 +2,7 @@
 
 #include "Walnut/Random.h"
 
-#include <iostream>
+#include <execution>
 
 namespace Utils {
 	static uint32_t ConvertToRGBA(const glm::vec4& color)
@@ -31,7 +31,33 @@ void Renderer::Render(const Scene& scene, const Camera& camera)
 		// float and int zeroes are represented the same way in memory
 		memset(m_AccumulationData, 0, m_FinalImage->GetHeight() * m_FinalImage->GetWidth() * sizeof(glm::vec4));
 	}
-	
+#define MULTITHREADING 1
+#if MULTITHREADING
+
+	std::for_each(std::execution::par, m_verticalImgIterator.begin(), m_verticalImgIterator.end(),
+		[this](uint32_t y) {
+			std::for_each(std::execution::par, m_horizontalImgIterator.begin(), m_horizontalImgIterator.end(),
+				[this, y](uint32_t x) {
+					//PerPixel(x, y);
+
+					//glm::vec2 coordinate = { (float)x / (float)m_FinalImage->GetWidth(), (float)y / (float)m_FinalImage->GetHeight() };
+					//coordinate = coordinate * 2.0f - 1.0f; //coordinate range is now from -1 to 1
+					//const glm::vec3& rayDir = camera.GetRayDirections()[x + y * m_FinalImage->GetWidth() ];
+
+					glm::vec4 color = PerPixel(x, y);
+					m_AccumulationData[x + y * m_FinalImage->GetWidth()] += color; // collect samples by adding them up
+
+					glm::vec4 avgColor = m_AccumulationData[x + y * m_FinalImage->GetWidth()];
+					avgColor /= (float)m_FrameCount;
+
+					avgColor = glm::clamp(avgColor, glm::vec4(0.0f), glm::vec4(1.0f)); // ensure that each rgba channel is between 0 and 1
+					m_ImageData[x + y * m_FinalImage->GetWidth()] = Utils::ConvertToRGBA(avgColor); // calculate the correct adress each pixel is stored in
+					//m_ImageData[i] = 0xff00ffff; // ff=alpha, 00=blue, ff=green, ff=red
+					//m_ImageData[x] = Walnut::Random::UInt();
+					//m_ImageData[x] |= 0xff000000; // ensure the alpha channel is alwas at 255
+				});
+		});
+#else
 	// this renders every pixel we have
 	for (uint32_t y = 0; y < m_FinalImage->GetHeight(); y++)
 	{
@@ -56,6 +82,7 @@ void Renderer::Render(const Scene& scene, const Camera& camera)
 			//m_ImageData[x] |= 0xff000000; // ensure the alpha channel is alwas at 255
 		}
 	}
+#endif
 	m_FinalImage->SetData(m_ImageData);
 
 	if (m_Settings.Accumulate)
@@ -206,6 +233,17 @@ void Renderer::onResize(uint32_t width, uint32_t height)
 	else
 	{
 		m_FinalImage = std::make_shared<Walnut::Image>(width, height, Walnut::ImageFormat::RGBA);
+	}
+
+	m_verticalImgIterator.resize(height);
+	m_horizontalImgIterator.resize(width);
+	for (uint32_t i = 0; i < width; i++)
+	{
+		m_horizontalImgIterator[i] = i;
+	}
+	for (uint32_t i = 0; i < height; i++)
+	{
+		m_verticalImgIterator[i] = i;
 	}
 
 	delete[] m_ImageData;

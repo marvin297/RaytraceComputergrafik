@@ -62,6 +62,9 @@ private:
 
 	Settings m_Settings;
 
+	std::vector<uint32_t> m_horizontalImgIterator;
+	std::vector<uint32_t> m_verticalImgIterator;
+
 	uint32_t* m_ImageData = nullptr;
 	glm::vec4* m_AccumulationData = nullptr;
 	uint32_t m_FrameCount = 1; // this is the count of how many frames have been rendered for the avg
