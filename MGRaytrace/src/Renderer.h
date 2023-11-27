@@ -10,6 +10,12 @@
 class Renderer
 {
 public:
+	struct Settings
+	{
+		bool Accumulate = true;
+	};
+
+public:
 
 	Renderer() = default;
 
@@ -22,6 +28,16 @@ public:
 	{
 		return m_FinalImage;
 	};
+
+	void FrameCountReset()
+	{
+		m_FrameCount = 1;
+	}
+
+	Settings& GetSettings()
+	{
+		return m_Settings;
+	}
 private:
 	struct HitPayload
 	{
@@ -44,5 +60,9 @@ private:
 	const Scene* m_ActiveScene = nullptr;
 	const Camera* m_ActiveCamera = nullptr;
 
+	Settings m_Settings;
+
 	uint32_t* m_ImageData = nullptr;
+	glm::vec4* m_AccumulationData = nullptr;
+	uint32_t m_FrameCount = 1; // this is the count of how many frames have been rendered for the avg
 };

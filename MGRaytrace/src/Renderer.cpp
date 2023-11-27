@@ -23,6 +23,14 @@ void Renderer::Render(const Scene& scene, const Camera& camera)
 {
 	m_ActiveScene = &scene;
 	m_ActiveCamera = &camera;
+
+	if (m_FrameCount == 1)
+	{
+		// clear the buffer to all 0
+		// memset does this by setting integer values of 0 instead of float zeroes
+		// float and int zeroes are represented the same way in memory
+		memset(m_AccumulationData, 0, m_FinalImage->GetHeight() * m_FinalImage->GetWidth() * sizeof(glm::vec4));
+	}
 	
 	// this renders every pixel we have
 	for (uint32_t y = 0; y < m_FinalImage->GetHeight(); y++)
@@ -36,15 +44,28 @@ void Renderer::Render(const Scene& scene, const Camera& camera)
 			//const glm::vec3& rayDir = camera.GetRayDirections()[x + y * m_FinalImage->GetWidth() ];
 
 			glm::vec4 color = PerPixel(x, y);
-			color = glm::clamp(color, glm::vec4(0.0f), glm::vec4(1.0f)); // ensure that each rgba channel is between 0 and 1
+			m_AccumulationData[x + y * m_FinalImage->GetWidth()] += color; // collect samples by adding them up
 
-			m_ImageData[ x + y * m_FinalImage->GetWidth() ] = Utils::ConvertToRGBA(color); // calculate the correct adress each pixel is stored in
+			glm::vec4 avgColor = m_AccumulationData[x + y * m_FinalImage->GetWidth()];
+			avgColor /= (float)m_FrameCount;
+
+			avgColor = glm::clamp(avgColor, glm::vec4(0.0f), glm::vec4(1.0f)); // ensure that each rgba channel is between 0 and 1
+			m_ImageData[ x + y * m_FinalImage->GetWidth() ] = Utils::ConvertToRGBA(avgColor); // calculate the correct adress each pixel is stored in
 			//m_ImageData[i] = 0xff00ffff; // ff=alpha, 00=blue, ff=green, ff=red
 			//m_ImageData[x] = Walnut::Random::UInt();
 			//m_ImageData[x] |= 0xff000000; // ensure the alpha channel is alwas at 255
 		}
 	}
 	m_FinalImage->SetData(m_ImageData);
+
+	if (m_Settings.Accumulate)
+	{
+		m_FrameCount++;
+	}
+	else
+	{
+		m_FrameCount = 1;
+	}
 }
 
 glm::vec4 Renderer::PerPixel(uint32_t x, uint32_t y)
@@ -189,5 +210,8 @@ void Renderer::onResize(uint32_t width, uint32_t height)
 
 	delete[] m_ImageData;
 	m_ImageData = new uint32_t[height * width]; // the rgba format uses 1 byte per channel so 1px = 1 uint32_T
+
+	delete[] m_AccumulationData;
+	m_AccumulationData = new glm::vec4[height * width];
 	
 }

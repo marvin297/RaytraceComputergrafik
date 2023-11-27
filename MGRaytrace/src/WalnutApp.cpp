@@ -18,7 +18,7 @@ public:
 	{
 
 		Material& yellowSphere = m_Scene.Materials.emplace_back();
-		yellowSphere.Albedo = { 1.0f, 0.0f, 1.0f };
+		yellowSphere.Albedo = { 1.0f, 1.0f, 0.0f };
 		yellowSphere.roughness = 0.01f;
 
 		Material& blueSphere = m_Scene.Materials.emplace_back();
@@ -45,13 +45,21 @@ public:
 
 	virtual void OnUpdate(float ts) override // ts is a timestep of the time passed from the last call of the func
 	{
-		m_Camera.OnUpdate(ts);
+		if (m_Camera.OnUpdate(ts))
+		{
+			m_Renderer.FrameCountReset();
+		}
 	}
 
 	virtual void OnUIRender() override //this func gets called every frame
 	{
 		ImGui::Begin("Settings");
 		ImGui::Text("Last render: %.2fms", m_LastRenderTime);
+		if (ImGui::Button("Reset"))
+		{
+			m_Renderer.FrameCountReset();
+		}
+		ImGui::Checkbox("Accumulate", &m_Renderer.GetSettings().Accumulate);
 		if (ImGui::Button("Render"))
 		{
 			Render();
