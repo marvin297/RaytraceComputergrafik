@@ -56,7 +56,7 @@ glm::vec4 Renderer::PerPixel(uint32_t x, uint32_t y)
 	glm::vec3 color(0.0f, 0.0f, 0.0f);
 	float multiplier = 1.0f;
 
-	int bounceCount = 2;
+	int bounceCount = 5;
 	for (int i = 0; i < bounceCount; i++)
 	{
 		Renderer::HitPayload payload = TraceRay(ray);
@@ -72,12 +72,13 @@ glm::vec4 Renderer::PerPixel(uint32_t x, uint32_t y)
 		float lightInt = glm::max(glm::dot(payload.WorldNorm, -lightDir), 0.0f); // dot product = cos(angle) but only positive values
 
 		const Sphere& sphere = m_ActiveScene->Spheres[payload.objectIndex];
+		const Material& material = m_ActiveScene->Materials[sphere.MaterialIndex];
 
-		glm::vec3 sphereCol = sphere.Mat.Albedo;
+		glm::vec3 sphereCol = material.Albedo;
 		sphereCol *= lightInt;
 		color += sphereCol * multiplier;
 
-		multiplier *= 0.7f;
+		multiplier *= 0.5f;
 
 		// set the ray origin to the hit position (which is worldposition)
 		// it is also required to move a minuscule amount aoutwards due to 
@@ -94,7 +95,7 @@ glm::vec4 Renderer::PerPixel(uint32_t x, uint32_t y)
 
 		//this is a more realistic approach:
 		ray.Direction = glm::reflect(ray.Direction, 
-			payload.WorldNorm + sphere.Mat.roughness * Walnut::Random::Vec3(-0.5f, 0.5));
+			payload.WorldNorm + material.roughness * Walnut::Random::Vec3(-0.5f, 0.5));
 
 	}
 

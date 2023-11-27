@@ -16,18 +16,27 @@ public:
 	ExampleLayer()
 		: m_Camera(45.0f, 0.1f, 100.0f)
 	{
+
+		Material& yellowSphere = m_Scene.Materials.emplace_back();
+		yellowSphere.Albedo = { 1.0f, 0.0f, 1.0f };
+		yellowSphere.roughness = 0.01f;
+
+		Material& blueSphere = m_Scene.Materials.emplace_back();
+		blueSphere.Albedo = { 0.2f, 0.3f, 1.0f };
+		blueSphere.roughness = 0.1f;
+
 		{
 			Sphere sphere;
 			sphere.Position = { 0.0f, 0.0f, 0.0f };
-			sphere.Mat.Albedo = { 1.0f, 0.0f, 1.0f };
 			sphere.radius = 1.0f;
+			sphere.MaterialIndex = 0; // apply the first material
 			m_Scene.Spheres.push_back(sphere);
 		}
 		{
 			Sphere sphere;
 			sphere.Position = { 0.0f, -101.0f, -0.0f };
-			sphere.Mat.Albedo = { 0.2f, 0.3f, 1.0f };
 			sphere.radius = 100.0f;
+			sphere.MaterialIndex = 1;
 			m_Scene.Spheres.push_back(sphere);
 		}
 		
@@ -57,13 +66,28 @@ public:
 			Sphere& sphere = m_Scene.Spheres[i];
 			ImGui::DragFloat3("Pos", glm::value_ptr(sphere.Position), 0.1f);
 			ImGui::DragFloat("Rad", &sphere.radius, 0.1f);
-			ImGui::ColorEdit3("Albedo", glm::value_ptr(sphere.Mat.Albedo));
-			ImGui::DragFloat("Roughness", &sphere.Mat.roughness, 0.1f);
-			ImGui::DragFloat("Metallic", &sphere.Mat.metallic, 0.1f);
+			ImGui::DragInt("Material", &sphere.MaterialIndex, 1.0f, 0, (int)m_Scene.Materials.size() - 1);
+			
 			ImGui::Separator();
 
 			ImGui::PopID();
 		}
+
+		for (size_t i = 0; i < m_Scene.Materials.size(); ++i)
+		{
+			ImGui::PushID(i);
+
+			Material& material = m_Scene.Materials[i];
+
+			ImGui::ColorEdit3("Albedo", glm::value_ptr(material.Albedo));
+			ImGui::DragFloat("Roughness", &material.roughness, 0.05f, 0.0f, 1.0f);
+			ImGui::DragFloat("Metallic", &material.metallic, 0.05f, 0.0f, 1.0f);
+
+			ImGui::Separator();
+
+			ImGui::PopID();
+		}
+
 		ImGui::End();
 
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f)); // remove bezels from viewport side
