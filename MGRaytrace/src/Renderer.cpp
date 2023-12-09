@@ -114,7 +114,7 @@ glm::vec4 Renderer::PerPixel(uint32_t x, uint32_t y)
 
 		if (payload.hitDist < 0.0f)
 		{
-			glm::vec3 skyColor = glm::vec3(0.6f, 0.7f, 0.9f);
+			glm::vec3 skyColor = (m_Settings.ambientOcclusion)? glm::vec3(0.6f, 0.7f, 0.9f) : glm::vec3( 0.0f );
 			light += skyColor * throughput;
 
 			break;
@@ -153,7 +153,8 @@ glm::vec4 Renderer::PerPixel(uint32_t x, uint32_t y)
 		//ray.Direction = glm::reflect(ray.Direction, 
 			//payload.WorldNorm + material.roughness * Walnut::Random::Vec3(-0.5f, 0.5));
 
-		ray.Direction = glm::normalize(payload.WorldNorm + Walnut::Random::InUnitSphere());
+		//ray.Direction = glm::normalize(payload.WorldNorm + Walnut::Random::InUnitSphere());
+		ray.Direction = ReflectRay(ray.Direction, payload.WorldNorm, material.roughness, material.metallic);
 	}
 
 
@@ -229,6 +230,14 @@ Renderer::HitPayload Renderer::Missed(const Ray& ray)
 	Renderer::HitPayload payload;
 	payload.hitDist = -1.0f; // never hit anything
 	return payload;
+}
+
+glm::vec3 Renderer::ReflectRay(const glm::vec3& incomingRay, const glm::vec3& normal, float roughness, float metallic) {
+	glm::vec3 reflectedRay = glm::reflect(incomingRay, normal); // Perfect mirror reflection
+	glm::vec3 diffuseRay = glm::normalize(normal + Walnut::Random::InUnitSphere()); // Lambertian reflection
+
+	// Interpolate based on the metallic value
+	return glm::mix(diffuseRay, reflectedRay, metallic);
 }
 
 void Renderer::onResize(uint32_t width, uint32_t height)

@@ -12,6 +12,7 @@ class Renderer
 public:
 	struct Settings
 	{
+		bool ambientOcclusion = true;
 		bool Accumulate = true;
 		bool Multithreading = true;
 	};
@@ -54,6 +55,8 @@ private:
 	HitPayload NearestHit(const Ray& ray, float hitDist, int objectIndex);
 	HitPayload Missed(const Ray& ray);
 	HitPayload TraceRay(const Ray& ray);
+
+	glm::vec3 Renderer::ReflectRay(const glm::vec3& incomingRay, const glm::vec3& normal, float roughness, float metallic);
 
 private:
 	std::shared_ptr<Walnut::Image> m_FinalImage;

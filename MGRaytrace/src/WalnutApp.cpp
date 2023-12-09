@@ -72,6 +72,7 @@ public:
 		{
 			m_Renderer.FrameCountReset();
 		}
+		ImGui::Checkbox("Ambient Occlusion", &m_Renderer.GetSettings().ambientOcclusion);
 		ImGui::Checkbox("Accumulate", &m_Renderer.GetSettings().Accumulate);
 		ImGui::Checkbox("Multithreading", &m_Renderer.GetSettings().Multithreading);
 		//if (ImGui::Button("Render"))
