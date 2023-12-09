@@ -105,7 +105,7 @@ glm::vec4 Renderer::PerPixel(uint32_t x, uint32_t y)
 	ray.Direction = m_ActiveCamera->GetRayDirections()[x + y * m_FinalImage->GetWidth()];
 
 	glm::vec3 light(0.0f, 0.0f, 0.0f);
-	glm::vec3 throughput(1.0f);
+	glm::vec3 throughput( 1.0f );
 
 	int bounceCount = 5;
 	for (int i = 0; i < bounceCount; i++)
@@ -115,7 +115,12 @@ glm::vec4 Renderer::PerPixel(uint32_t x, uint32_t y)
 		if (payload.hitDist < 0.0f)
 		{
 			glm::vec3 skyColor = (m_Settings.ambientOcclusion)? glm::vec3(0.6f, 0.7f, 0.9f) : glm::vec3( 0.0f );
-			light += skyColor * throughput;
+			//light += skyColor * throughput;
+
+			if (1)
+			{
+				light += skyColor * throughput;
+			}
 
 			break;
 		}
@@ -130,11 +135,13 @@ glm::vec4 Renderer::PerPixel(uint32_t x, uint32_t y)
 		//sphereCol *= lightInt;
 		//light += material.Albedo * multiplier;
 
+		light += material.GetEmission() * throughput;
+
 		//the throughput is eventially decrease or stay at one but will
 		//never ever increase. in physics: conservation of energy law!
 		throughput *= material.Albedo;
 
-		light += material.GetEmission() * material.Albedo;
+		/*light += material.GetEmission() * material.Albedo;*/
 
 		// set the ray origin to the hit position (which is worldposition)
 		// it is also required to move a minuscule amount aoutwards due to 
