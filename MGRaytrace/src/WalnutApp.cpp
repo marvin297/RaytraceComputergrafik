@@ -18,7 +18,8 @@ public:
 	{
 
 		Material& yellowSphere = m_Scene.Materials.emplace_back();
-		yellowSphere.Albedo = { 1.0f, 1.0f, 0.0f };
+
+		yellowSphere.Albedo = { 0.9f, 0.9f, 0.9f };
 		yellowSphere.roughness = 0.01f;
 
 		Material& blueSphere = m_Scene.Materials.emplace_back();
@@ -42,7 +43,7 @@ public:
 			Sphere sphere;
 			sphere.Position = { 2.0f, 0.0f, 0.0f };
 			sphere.radius = 1.0f;
-			sphere.MaterialIndex = 2; // apply the first material
+			sphere.MaterialIndex = 2; // apply the third material
 			m_Scene.Spheres.push_back(sphere);
 		}
 		{
@@ -56,7 +57,7 @@ public:
 	}
 
 
-	virtual void OnUpdate(float ts) override // ts is a timestep of the time passed from the last call of the func
+	virtual void OnUpdate(float ts) override // ts is a timestep of the time passed from the last call of the func to the current call
 	{
 		if (m_Camera.OnUpdate(ts))
 		{
@@ -68,17 +69,13 @@ public:
 	{
 		ImGui::Begin("Settings");
 		ImGui::Text("fps: %.2f", (float)(1000.0f / m_LastRenderTime));
-		if (ImGui::Button("Reset"))
+		if (ImGui::Button("Reset rendering"))
 		{
 			m_Renderer.FrameCountReset();
 		}
 		ImGui::Checkbox("Ambient Occlusion", &m_Renderer.GetSettings().ambientOcclusion);
-		ImGui::Checkbox("Accumulate", &m_Renderer.GetSettings().Accumulate);
+		ImGui::Checkbox("Accumulate Samples", &m_Renderer.GetSettings().Accumulate);
 		ImGui::Checkbox("Multithreading", &m_Renderer.GetSettings().Multithreading);
-		//if (ImGui::Button("Render"))
-		//{
-		//	Render();
-		//}
 		ImGui::End();
 
 		ImGui::Begin("Scene");
@@ -105,6 +102,7 @@ public:
 			ImGui::ColorEdit3("Albedo", glm::value_ptr(material.Albedo));
 			ImGui::DragFloat("Roughness", &material.roughness, 0.05f, 0.0f, 1.0f);
 			ImGui::DragFloat("Metallic", &material.metallic, 0.05f, 0.0f, 1.0f);
+			ImGui::DragFloat("Transparency", &material.transparency, 0.05f, 0.0f, 1.0f);
 			ImGui::ColorEdit3("Emission col", glm::value_ptr(material.emissionCol));
 			ImGui::DragFloat("Emission pow", &material.emissionPow, 0.05f, 0.0f, std::numeric_limits<float>::max());
 

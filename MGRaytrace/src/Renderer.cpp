@@ -107,7 +107,7 @@ glm::vec4 Renderer::PerPixel(uint32_t x, uint32_t y)
 	glm::vec3 light(0.0f, 0.0f, 0.0f);
 	glm::vec3 throughput( 1.0f );
 
-	int bounceCount = 5;
+	int bounceCount = 50;
 	for (int i = 0; i < bounceCount; i++)
 	{
 		Renderer::HitPayload payload = TraceRay(ray);
@@ -131,40 +131,51 @@ glm::vec4 Renderer::PerPixel(uint32_t x, uint32_t y)
 		const Sphere& sphere = m_ActiveScene->Spheres[payload.objectIndex];
 		const Material& material = m_ActiveScene->Materials[sphere.MaterialIndex];
 
-		//glm::vec3 sphereCol = material.Albedo;
-		//sphereCol *= lightInt;
-		//light += material.Albedo * multiplier;
-
 		light += material.GetEmission() * throughput;
 
 		//the throughput is eventially decrease or stay at one but will
 		//never ever increase. in physics: conservation of energy law!
 		throughput *= material.Albedo;
 
-		/*light += material.GetEmission() * material.Albedo;*/
+		if (material.transparency > 0.0f)
+		{
+			glm::vec3 refractedDirection = glm::refract(ray.Direction, payload.WorldNorm, 1.0f / material.refractiveIndex);
 
-		// set the ray origin to the hit position (which is worldposition)
-		// it is also required to move a minuscule amount aoutwards due to 
-		// some uncertainty within floating point numbers
-		// there could be a colision with the sphere itseolf directly at the start/origin
-		// so adding a tini amount in the Normal's direction fixes this
-		ray.Origin = payload.WorldPos + payload.WorldNorm * 0.0001f;
+			// Check for total internal reflection
+			if (glm::length(refractedDirection) == 0.0f) // This means total internal reflection occurred
+			{
+				ray.Direction = glm::reflect(ray.Direction, payload.WorldNorm);
+			}
+			else
+			{
+				ray.Origin = payload.WorldPos + refractedDirection;
+				ray.Direction = refractedDirection;
+				throughput *= glm::vec3(1.0f - material.transparency);
+			}
+		}
+		else
+		{
+			// set the ray origin to the hit position (which is worldposition)
+			// it is also required to move a minuscule amount aoutwards due to 
+			// some uncertainty within floating point numbers
+			// there could be a colision with the sphere itseolf directly at the start/origin
+			// so adding a tiny amount in the Normal's direction fixes this
+			ray.Origin = payload.WorldPos + payload.WorldNorm * 0.0001f;
 
-		// calc the reflected ray direction.
-		// the incoming angle from the ray to the Normal is equal to the outgoing angle
-		// this is a simple optical law in physics
-		// however tis is VERY idealized assuming a perfectly flat surface (which physically cannot exist):
-		//ray.Direction = glm::reflect(ray.Direction, payload.WorldNorm);
+			// calc the reflected ray direction.
+			// the incoming angle from the ray to the Normal is equal to the outgoing angle
+			// this is a simple optical law in physics
+			// however tis is VERY idealized assuming a perfectly flat surface (which physically cannot exist):
+			//ray.Direction = glm::reflect(ray.Direction, payload.WorldNorm);
 
-		//this is a more realistic approach:
-		//ray.Direction = glm::reflect(ray.Direction, 
-			//payload.WorldNorm + material.roughness * Walnut::Random::Vec3(-0.5f, 0.5));
+			//this is a more realistic approach:
+			//ray.Direction = glm::reflect(ray.Direction, 
+				//payload.WorldNorm + material.roughness * Walnut::Random::Vec3(-0.5f, 0.5));
 
-		//ray.Direction = glm::normalize(payload.WorldNorm + Walnut::Random::InUnitSphere());
-		ray.Direction = ReflectRay(ray.Direction, payload.WorldNorm, material.roughness, material.metallic);
+			//ray.Direction = glm::normalize(payload.WorldNorm + Walnut::Random::InUnitSphere());
+			ray.Direction = ReflectRay(ray.Direction, payload.WorldNorm, material.roughness, material.metallic);
+		}
 	}
-
-
 	return glm::vec4(light, 1.0f);
 }
 

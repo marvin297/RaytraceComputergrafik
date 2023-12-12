@@ -7,6 +7,8 @@ struct Material
 	glm::vec3 Albedo{ 1.0f };
 	float roughness = 1.0f;
 	float metallic = 0.0f;
+	float transparency = 0.0f;
+	float refractiveIndex = 1.33f;
 
 	float emissionPow = 0.0f;
 	glm::vec3 emissionCol{ 0.0f };
