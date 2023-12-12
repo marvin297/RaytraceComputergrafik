@@ -113,7 +113,7 @@ public:
 
 			ImGui::PopID();
 		}
-
+		ImGui::Text("Materials");
 		for (size_t i = 0; i < m_Scene.Materials.size(); ++i)
 		{
 			ImGui::PushID(i);
@@ -124,6 +124,7 @@ public:
 			ImGui::DragFloat("Roughness", &material.roughness, 0.05f, 0.0f, 1.0f);
 			ImGui::DragFloat("Metallic", &material.metallic, 0.05f, 0.0f, 1.0f);
 			ImGui::DragFloat("Transparency", &material.transparency, 0.05f, 0.0f, 1.0f);
+			ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "Transparency is still experimental");
 			ImGui::ColorEdit3("Emission col", glm::value_ptr(material.emissionCol));
 			ImGui::DragFloat("Emission pow", &material.emissionPow, 0.05f, 0.0f, std::numeric_limits<float>::max());
 
@@ -184,12 +185,36 @@ private:
 Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 {
 	Walnut::ApplicationSpecification appSpecification;
-	appSpecification.Name = "MGRaytrace";
+	appSpecification.Name = "Raytrace Project by Marvin Geiger";
 
 	Walnut::Application* app = new Walnut::Application(appSpecification);
 	app->PushLayer<ExampleLayer>();
 	app->SetMenubarCallback([app]()
 	{
+		ImVec4 darkRed = ImVec4(0.20f, 0.08f, 0.08f, 1.00f);
+		ImVec4 brightRed = ImVec4(0.92f, 0.30f, 0.30f, 1.00f);
+		ImVec4 brighterRed = ImVec4(0.99f, 0.64f, 0.64f, 1.00f);
+
+		ImVec4* colors = ImGui::GetStyle().Colors;
+		colors[ImGuiCol_Button] = darkRed;
+		colors[ImGuiCol_FrameBg] = darkRed;
+		colors[ImGuiCol_ButtonHovered] = brightRed;
+		colors[ImGuiCol_FrameBgHovered] = brightRed;
+		colors[ImGuiCol_ButtonActive] = brighterRed;
+		colors[ImGuiCol_FrameBgActive] = brighterRed;
+		colors[ImGuiCol_CheckMark] = brighterRed;
+
+		colors[ImGuiCol_TitleBgActive] = ImVec4(0.15f, 0.1f, 0.1f, 1.00f);;
+
+		colors[ImGuiCol_Header] = darkRed;
+		colors[ImGuiCol_HeaderHovered] = brightRed;
+		colors[ImGuiCol_HeaderActive] = brighterRed;
+
+		colors[ImGuiCol_TabUnfocused] = darkRed;
+		colors[ImGuiCol_TabHovered] = brightRed;
+		colors[ImGuiCol_TabActive] = brightRed;
+		colors[ImGuiCol_TabUnfocusedActive] = darkRed;
+
 		if (ImGui::BeginMenu("More"))
 		{
 			if (ImGui::MenuItem("Exit to Desktop"))
@@ -202,7 +227,9 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 			ImGui::EndMenu();
 		}
 		ImGui::Separator();
-		ImGui::TextColored(ImVec4(0.0f, 0.8f, 0.8f, 1.0f), "Raytrace Project by Marvin Geiger @ DHBW Stuttgart");
+		ImGui::TextColored(ImVec4(0.99f, 0.64f, 0.64f, 1.00f), "Raytrace Project by Marvin Geiger @ DHBW Stuttgart");
+		ImGui::Separator();
+		ImGui::TextColored(ImVec4(0.99f, 0.64f, 0.64f, 1.00f), "13th October 2023 until 15th December 2023");
 	});
 	return app;
 }
