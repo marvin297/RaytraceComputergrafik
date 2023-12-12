@@ -219,15 +219,65 @@ Renderer::HitPayload Renderer::TraceRay(const Ray& ray)
 		}
 
 	}
-	
-	if (closestSphere < 0)
-		return Missed(ray);
 
-	return NearestHit(ray, hitDist, closestSphere);
+	int closestCube = -1;
+	bool isCubeHit = false;
+	for (size_t i = 0; i < m_ActiveScene->Cubes.size(); ++i) // cube intersection
+	{
+		const Cube& cube = m_ActiveScene->Cubes[i];
+
+		float tMin = 0.0f; // Start of the ray
+		float tMax = std::numeric_limits<float>::max(); // Farthest intersection point
+
+		// Iterate over each axis (x, y, z)
+		for (int i = 0; i < 3; ++i) {
+			float invD = 1.0f / ray.Direction[i];
+			float t0 = (cube.min[i] - ray.Origin[i]) * invD;
+			float t1 = (cube.max[i] - ray.Origin[i]) * invD;
+
+			if (invD < 0.0f) {
+				std::swap(t0, t1);
+			}
+
+			tMin = t0 > tMin ? t0 : tMin;
+			tMax = t1 < tMax ? t1 : tMax;
+
+			if (tMax <= tMin) {
+				tMin = -1.0f; // No intersection
+				break;
+			}
+		}
+		float tClosest = tMin;
+		if (tClosest > 0.0f && tClosest < hitDist)
+		{
+			hitDist = tClosest;
+			closestCube = (int)i;
+			isCubeHit = true;
+		}
+	}
+
+	if (isCubeHit)
+	{
+		return NearestCubeHit(ray, hitDist, closestCube);
+	}
+	else if (closestSphere >= 0)
+	{
+		return NearestSphereHit(ray, hitDist, closestSphere);
+	}
+	else
+	{
+		return Missed(ray);
+	}
+
+	
+	//if (closestSphere < 0)
+		//return Missed(ray);
+
+	//return NearestHit(ray, hitDist, closestSphere);
 	
 }
 
-Renderer::HitPayload Renderer::NearestHit(const Ray& ray, float hitDist, int objectIndex)
+Renderer::HitPayload Renderer::NearestSphereHit(const Ray& ray, float hitDist, int objectIndex)
 {
 	Renderer::HitPayload payload;
 	payload.hitDist = hitDist;
@@ -240,6 +290,40 @@ Renderer::HitPayload Renderer::NearestHit(const Ray& ray, float hitDist, int obj
 	payload.WorldPos = origin + ray.Direction * hitDist;
 	payload.WorldNorm = glm::normalize(payload.WorldPos);
 	payload.WorldPos += closestSphere.Position;
+	return payload;
+}
+
+Renderer::HitPayload Renderer::NearestCubeHit(const Ray& ray, float hitDist, int objectIndex)
+{
+	Renderer::HitPayload payload;
+	payload.hitDist = hitDist;
+	payload.objectIndex = objectIndex;
+
+	const Cube& closestCube = m_ActiveScene->Cubes[objectIndex];
+	payload.WorldPos = ray.Origin + ray.Direction * hitDist;
+
+
+	glm::vec3 hitNormal(0.0f);
+	float alpha = 0.0001f; // i dont know why but without this it doesnt work; seems to be a fp-precision issue
+
+	if (glm::abs(payload.WorldPos.x - closestCube.min.x) < alpha)
+		hitNormal.x = -1.0f;
+	else if (glm::abs(payload.WorldPos.x - closestCube.max.x) < alpha)
+		hitNormal.x = 1.0f;
+	else if (glm::abs(payload.WorldPos.y - closestCube.min.y) < alpha)
+		hitNormal.y = -1.0f;
+	else if (glm::abs(payload.WorldPos.y - closestCube.max.y) < alpha)
+		hitNormal.y = 1.0f;
+	else if (glm::abs(payload.WorldPos.z - closestCube.min.z) < alpha)
+		hitNormal.z = -1.0f;
+	else if (glm::abs(payload.WorldPos.z - closestCube.max.z) < alpha)
+		hitNormal.z = 1.0f;
+
+	payload.WorldNorm = glm::normalize(hitNormal);
+
+	payload.isCube = true;
+	payload.materialIndex = closestCube.MaterialIndex;
+
 	return payload;
 }
 

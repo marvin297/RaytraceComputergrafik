@@ -19,6 +19,33 @@ struct Material
 	}
 };
 
+struct Cube {
+	glm::vec3 min; // Minimum corner of the cube
+	glm::vec3 max; // Maximum corner of the cube
+
+	glm::vec3 center;
+
+	// Constructor to create a cube
+	Cube(const glm::vec3& minCorner, const glm::vec3& maxCorner) : min(minCorner), max(maxCorner)
+	{
+		center = GetCenter();
+	}
+
+	// Helper function to create a cube given its center and side length
+	static Cube FromCenterAndSize(const glm::vec3& center, float sideLength)
+	{
+		glm::vec3 halfSize = glm::vec3(sideLength / 2.0f);
+		return Cube(center - halfSize, center + halfSize);
+	}
+
+	glm::vec3 GetCenter()
+	{
+		glm::vec3 sideLength = max - min;
+		return glm::vec3(sideLength / 2.0f);
+	}
+
+	int MaterialIndex = 0;
+};
 
 struct Sphere
 {
@@ -30,6 +57,7 @@ struct Sphere
 
 struct Scene
 {
+	std::vector<Cube> Cubes;
 	std::vector<Sphere> Spheres;
 	std::vector<Material> Materials;
 };

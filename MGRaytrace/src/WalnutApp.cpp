@@ -54,6 +54,11 @@ public:
 			sphere.MaterialIndex = 1;
 			m_Scene.Spheres.push_back(sphere);
 		}
+
+		glm::vec3 cubeCenter = glm::vec3{ 2.0f, 0.0f, 2.0f };
+		Cube cube = Cube::FromCenterAndSize(cubeCenter, 2.0f);
+		m_Scene.Cubes.push_back(cube);
+		
 		
 	}
 
@@ -69,7 +74,7 @@ public:
 	virtual void OnUIRender() override //this func gets called every frame
 	{
 		ImGui::Begin("Settings");
-		ImGui::Text("FPS: %.2f | t_Frame: %.1fms", (float)(1000.0f / m_LastRenderTime), m_LastRenderTime);
+		ImGui::Text("FPS: %.2f \nt_Frame: %.1fms", (float)(1000.0f / m_LastRenderTime), m_LastRenderTime);
 		if (ImGui::Button("Reset rendering"))
 		{
 			m_Renderer.FrameCountReset();
@@ -80,15 +85,30 @@ public:
 		ImGui::End();
 
 		ImGui::Begin("Scene");
-		for (size_t i = 0; i < m_Scene.Spheres.size(); ++i)
+		ImGui::Text("Cubes");
+		for (size_t i = 0; i < m_Scene.Cubes.size(); ++i)
 		{
 			ImGui::PushID(i);
 			
+			Cube& cube = m_Scene.Cubes[i];
+			ImGui::DragFloat3("Pos", glm::value_ptr(cube.center), 0.1f);
+			//ImGui::DragFloat("Rad", &sphere.radius, 0.1f);
+			//ImGui::DragInt("Material", &sphere.MaterialIndex, 1.0f, 0, (int)m_Scene.Materials.size() - 1);
+			
+			ImGui::Separator();
+
+			ImGui::PopID();
+		}
+		ImGui::Text("Spheres");
+		for (size_t i = 0; i < m_Scene.Spheres.size(); ++i)
+		{
+			ImGui::PushID(i);
+
 			Sphere& sphere = m_Scene.Spheres[i];
 			ImGui::DragFloat3("Pos", glm::value_ptr(sphere.Position), 0.1f);
 			ImGui::DragFloat("Rad", &sphere.radius, 0.1f);
 			ImGui::DragInt("Material", &sphere.MaterialIndex, 1.0f, 0, (int)m_Scene.Materials.size() - 1);
-			
+
 			ImGui::Separator();
 
 			ImGui::PopID();

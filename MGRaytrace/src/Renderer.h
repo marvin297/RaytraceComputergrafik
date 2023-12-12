@@ -45,14 +45,19 @@ private:
 	{
 		float hitDist;
 		int objectIndex;
+		int materialIndex;
 		glm::vec3 WorldNorm;
 		glm::vec3 WorldPos;
+		bool isCube = false;
 	};
 
 	// this is going to implement a raygen shader similar to vulkan
 	glm::vec4 PerPixel(uint32_t x, uint32_t y);
 
-	HitPayload NearestHit(const Ray& ray, float hitDist, int objectIndex);
+	Renderer::HitPayload Renderer::NearestSphereHit(const Ray& ray, float hitDist, int objectIndex);
+	Renderer::HitPayload Renderer::NearestCubeHit(const Ray& ray, float hitDist, int objectIndex);
+
+	//HitPayload NearestHit(const Ray& ray, float hitDist, int objectIndex);
 	HitPayload Missed(const Ray& ray);
 	HitPayload TraceRay(const Ray& ray);
 
