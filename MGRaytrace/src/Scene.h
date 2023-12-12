@@ -19,6 +19,7 @@ struct Material
 	}
 };
 
+
 struct Sphere
 {
 	glm::vec3 Position{0.0f};

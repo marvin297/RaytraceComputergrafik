@@ -8,6 +8,7 @@
 #include "Renderer.h"
 #include "Camera.h"
 
+
 using namespace Walnut;
 
 class ExampleLayer : public Walnut::Layer
@@ -68,7 +69,7 @@ public:
 	virtual void OnUIRender() override //this func gets called every frame
 	{
 		ImGui::Begin("Settings");
-		ImGui::Text("fps: %.2f", (float)(1000.0f / m_LastRenderTime));
+		ImGui::Text("FPS: %.2f | t_Frame: %.1fms", (float)(1000.0f / m_LastRenderTime), m_LastRenderTime);
 		if (ImGui::Button("Reset rendering"))
 		{
 			m_Renderer.FrameCountReset();
@@ -162,21 +163,26 @@ private:
 
 Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 {
-	Walnut::ApplicationSpecification spec;
-	spec.Name = "MGRaytrace";
+	Walnut::ApplicationSpecification appSpecification;
+	appSpecification.Name = "MGRaytrace";
 
-	Walnut::Application* app = new Walnut::Application(spec);
+	Walnut::Application* app = new Walnut::Application(appSpecification);
 	app->PushLayer<ExampleLayer>();
 	app->SetMenubarCallback([app]()
 	{
-		if (ImGui::BeginMenu("File"))
+		if (ImGui::BeginMenu("More"))
 		{
-			if (ImGui::MenuItem("Exit"))
+			if (ImGui::MenuItem("Exit to Desktop"))
 			{
 				app->Close();
 			}
+			ImGui::Separator();
+			ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "Raytrace Project by Marvin Geiger");
+			ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "https://github.com/marvin297");
 			ImGui::EndMenu();
 		}
+		ImGui::Separator();
+		ImGui::TextColored(ImVec4(0.0f, 0.8f, 0.8f, 1.0f), "Raytrace Project by Marvin Geiger @ DHBW Stuttgart");
 	});
 	return app;
 }
