@@ -74,7 +74,7 @@ public:
 	virtual void OnUIRender() override //this func gets called every frame
 	{
 		ImGui::Begin("Settings");
-		ImGui::Text("FPS: %.2f \nt_Frame: %.1fms", (float)(1000.0f / m_LastRenderTime), m_LastRenderTime);
+		ImGui::Text("FPS: %.0f \nt_Frame: %.3fms", (float)(1000.0f / m_LastRenderTime), m_LastRenderTime);
 		if (ImGui::Button("Reset rendering"))
 		{
 			m_Renderer.FrameCountReset();
@@ -214,6 +214,8 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 		colors[ImGuiCol_TabHovered] = brightRed;
 		colors[ImGuiCol_TabActive] = brightRed;
 		colors[ImGuiCol_TabUnfocusedActive] = darkRed;
+
+		ImGui::GetStyle().FrameRounding = 4.0f;
 
 		if (ImGui::BeginMenu("More"))
 		{
