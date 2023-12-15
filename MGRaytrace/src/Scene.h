@@ -12,6 +12,7 @@ struct Material
 
 	float emissionPow = 0.0f;
 	glm::vec3 emissionCol{ 0.0f };
+	char name[10]{0};
 
 	glm::vec3 GetEmission() const
 	{
@@ -31,7 +32,7 @@ struct Cube {
 		center = GetCenter();
 	}
 
-	// Helper function to create a cube given its center and side length
+	// Helper function to create a cube with its center and side length
 	static Cube FromCenterAndSize(const glm::vec3& center, float sideLength)
 	{
 		glm::vec3 halfSize = glm::vec3(sideLength / 2.0f);
@@ -44,7 +45,7 @@ struct Cube {
 		return glm::vec3(sideLength / 2.0f);
 	}
 
-	int MaterialIndex = 0;
+	int MaterialIndex = 3;
 };
 
 struct Sphere

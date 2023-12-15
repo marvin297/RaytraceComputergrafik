@@ -107,7 +107,7 @@ glm::vec4 Renderer::PerPixel(uint32_t x, uint32_t y)
 	glm::vec3 light(0.0f, 0.0f, 0.0f);
 	glm::vec3 throughput( 1.0f );
 
-	int bounceCount = 50;
+	int bounceCount = 5;
 	for (int i = 0; i < bounceCount; i++)
 	{
 		Renderer::HitPayload payload = TraceRay(ray);
@@ -137,6 +137,7 @@ glm::vec4 Renderer::PerPixel(uint32_t x, uint32_t y)
 		//never ever increase. in physics: conservation of energy law!
 		throughput *= material.Albedo;
 
+		//handle the tramsparency
 		if (material.transparency > 0.0f)
 		{
 			glm::vec3 refractedDirection = glm::refract(ray.Direction, payload.WorldNorm, 1.0f / material.refractiveIndex);
@@ -150,7 +151,7 @@ glm::vec4 Renderer::PerPixel(uint32_t x, uint32_t y)
 			{
 				ray.Origin = payload.WorldPos + refractedDirection;
 				ray.Direction = refractedDirection;
-				throughput *= glm::vec3(1.0f - material.transparency);
+				throughput *= glm::vec3(material.transparency);
 			}
 		}
 		else
@@ -196,7 +197,6 @@ Renderer::HitPayload Renderer::TraceRay(const Ray& ray)
 
 		glm::vec3 origin = ray.Origin - sphere.Position;
 
-		//float a = rayDir.x * rayDir.x + rayDir.y * rayDir.y + rayDir.z * rayDir.z; // this equals the dot product with itself
 		float a = glm::dot(ray.Direction, ray.Direction);
 		float b = 2.0f * glm::dot(origin, ray.Direction);
 		float c = glm::dot(origin, origin) - sphere.radius * sphere.radius;
@@ -304,8 +304,9 @@ Renderer::HitPayload Renderer::NearestCubeHit(const Ray& ray, float hitDist, int
 
 
 	glm::vec3 hitNormal(0.0f);
-	float alpha = 0.0001f; // i dont know why but without this it doesnt work; seems to be a fp-precision issue
+	float alpha = 0.0001f; // i dont know why but without this it doesnt work; seems to be a fp-precision issue that is fixed by a offset
 
+	//here are the norrmals of the cube defined
 	if (glm::abs(payload.WorldPos.x - closestCube.min.x) < alpha)
 		hitNormal.x = -1.0f;
 	else if (glm::abs(payload.WorldPos.x - closestCube.max.x) < alpha)
@@ -339,6 +340,7 @@ glm::vec3 Renderer::ReflectRay(const glm::vec3& incomingRay, const glm::vec3& no
 	glm::vec3 diffuseRay = glm::normalize(normal + Walnut::Random::InUnitSphere()); // Lambertian reflection
 
 	// Interpolate based on the metallic value
+	// glm::mix does a linear interpolation with the factor metallic between vectors reflected Ray and diffused Ray
 	return glm::mix(diffuseRay, reflectedRay, metallic);
 }
 
